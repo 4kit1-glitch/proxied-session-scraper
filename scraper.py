@@ -6,6 +6,7 @@ assumes the website to give not be a js heavy page
 import os
 import sys
 import requests
+import json
 from pathlib import Path
 
 
@@ -24,19 +25,32 @@ DEFAULT_CONFIG = {
     }
 }
 
+DEFAULT_PROXIES = ("http://1.1.1.1:8080", "http://2.2.2.2:8080", "http://3.3.3.3:8080")
 
 
 def initiation() -> None:
     """
     initialization function
-        sets up dir stucture 
+        sets up dir structure and creates default files if missing
     """
-    
-
-    for path, file in zip(REQ_DIRS, REQ_FILES):
+    for path in REQ_DIRS:
         path.mkdir(exist_ok=True, parents=True)
+        
+    for file in REQ_FILES:
         file.touch(exist_ok=True)
-
+        
+    # If config is empty, write the default template
+    config_file = BASE_PATH / "data" / "config.json"
+    if config_file.stat().st_size == 0:
+        with config_file.open("w", encoding="utf-8") as f:
+            json.dump(DEFAULT_CONFIG, f, indent=4)
+            
+    # If proxies is empty, put some dummy placeholders
+    proxy_file = BASE_PATH / "proxies" / "proxies.txt"
+    if proxy_file.stat().st_size == 0:
+        with proxy_file.open("w", encoding="utf-8") as f:
+            for proxy in DEFAULT_PROXIES:
+                f.write(proxy)
 
 def load_config() -> dict:
     pass
