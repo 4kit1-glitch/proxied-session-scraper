@@ -65,26 +65,18 @@ def read_proxies() -> tuple:
     with PROXIES_FILE.open("r", encoding="utf-8") as f:
         return tuple(line.strip() for line in f if line.strip())
 
-
-def is_login_req(config: dict) -> bool:
-    return bool(config.get("username") and config.get("password"))
-
-
-def _verify_login(response: requests.Response, method: str, text: str, url: str) -> bool:
-    """Checks the specific condition to confirm login succeeded."""
-    if method == "redirect":
-        if response.status_code in (301, 302, 303, 307, 308):
-            redirect_url = response.headers.get("Location", "")
-            if "login" not in redirect_url.lower():
-                return True
-    elif method == "url":
-        if url and url in response.url:
-            return True
-    else: # Default to "text"
-        if text and text in response.text:
-            return True
-            
-    return False
+def setup_session(config: dict, proxies: tuple) -> requests.Session:
+    session = requests.Session()
+    session.headers.update(config.get("headers", {}))
+    
+    if proxies:
+        proxy = random.choice(proxies)
+        session.proxies.update({"http": proxy, "https": proxy})
+        print(f"  -> Using proxy: {proxy}")
+    else:
+        print("  -> No proxies found. Using direct connection.")
+        
+    return session
 
 
 def login_and_scrape(
