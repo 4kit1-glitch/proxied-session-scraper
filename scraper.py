@@ -178,6 +178,19 @@ def _save_vid(response: requests.Response) -> None:
     print(f"  -> Saved Video to {path.name}")
 
 
+def save_response(response: requests.Response) -> None:
+    content_type = response.headers.get("content-type", "").lower()
+    
+    if "application/json" in content_type:
+        _save_json(response)
+    elif "image" in content_type:
+        _save_img(response)
+    elif "video" in content_type:
+        _save_vid(response)
+    elif "text/html" in content_type:
+        _save_html(response)
+    else:
+        _save_text(response)
 
 def main() -> int:
     print("Starting templated scraper...")
