@@ -195,49 +195,51 @@ def save_response(response: requests.Response) -> None:
 def main() -> int:
     print("Starting templated scraper...")
     
+    print("[1/6] Initializing environment...")
     try:
         initiation()
+    except OSError as e:
+        print(f"  -> Failed to initialize files: {e}")
+        return 1
+        
+    print("[2/6] Loading configuration...")
+    try:
         config = load_config()
+        proxies = read_proxies()
     except (OSError, json.JSONDecodeError) as e:
-        print(f"Setup/Config Error: {e}")
+        print(f"  -> Configuration error: {e}")
         return 1
         
-    proxies = read_proxies()
+    print("[3/6] Setting up session...")
+    session = setup_session(config, proxies)
+    
     target_url = config.get("target_url")
-    headers = config.get("headers", {})
+    if not target_url:
+        print("  -> Error: 'target_url' missing from config.")
+        return 1
     
-    # 1. Main extracts and picks the proxy
-    proxy_dict = None
-    if proxies:
-        chosen_proxy = random.choice(proxies)
-        proxy_dict = {"http": chosen_proxy, "https": chosen_proxy}
-    
-    # 2. Main calls the function with the exact data it needs
-    if is_login_req(config):
-        response = login_and_scrape(
-            login_url=config.get("login_url"),
-            target_url=target_url,
-            username=config["username"],
-            password=config["password"],
-            headers=headers,
-            proxy_dict=proxy_dict,
-            verify_method=config.get("login_verify_method", "text"),
-            verify_text=config.get("login_success_text", ""),
-            verify_url=config.get("login_success_url", "")
-        )
+    if config.get("username") and config.get("password"):
+        print("[4/6] Authenticating...")
+        if not login(session, config):
+            print("  -> Login failed. Exiting.")
+            return 1
+        print("  -> Login successful.")
     else:
-        response = direct_scrape(target_url, headers, proxy_dict)
-        
-    if response is None:
-        print("Scrape failed. Exiting.")
+        print("[4/6] Skipping authentication (no credentials provided).")
+
+    print(f"[5/6] Scraping target: {target_url}...")
+    response = scrape(session, target_url)
+    if not response:
         return 1
         
+    print("[6/6] Saving response...")
     try:
         save_response(response)
     except OSError as e:
-        print(f"File save error: {e}")
+        print(f"  -> File save error: {e}")
         return 1
         
+    print("Finished successfully.")
     return 0
 
 
