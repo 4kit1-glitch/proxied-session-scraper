@@ -59,9 +59,9 @@ def read_proxies() -> tuple:
     pass
 
 
-def is_login_req() -> bool:
+def is_login_req(config: dict) -> bool:
     """ check if a page needs a login of some sort """
-    pass
+    return bool(config.get("username") and config.get("password"))
 
 
 def login_and_scrape(url: str, proxies: tuple, payload: dict) -> requests.Response | None:
