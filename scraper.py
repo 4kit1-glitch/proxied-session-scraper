@@ -148,6 +148,36 @@ def _stream_to_file(response: requests.Response, path: Path, is_text: bool = Fal
             if chunk:
                 f.write(chunk)
 
+def _save_text(response: requests.Response) -> None:
+    path = BASE_PATH / "data" / "output.txt"
+    _stream_to_file(response, path, is_text=True)
+    print(f"  -> Saved Text to {path.name}")
+
+
+def _save_json(response: requests.Response) -> None:
+    path = BASE_PATH / "data" / "output.json"
+    _stream_to_file(response, path, is_text=True)
+    print(f"  -> Saved JSON to {path.name}")
+
+
+def _save_html(response: requests.Response) -> None:
+    path = BASE_PATH / "data" / "output.html"
+    _stream_to_file(response, path, is_text=True)
+    print(f"  -> Saved HTML to {path.name}")
+
+
+def _save_img(response: requests.Response) -> None:
+    path = BASE_PATH / "data" / "output.png"
+    _stream_to_file(response, path, is_text=False)
+    print(f"  -> Saved Image to {path.name}")
+
+
+def _save_vid(response: requests.Response) -> None:
+    path = BASE_PATH / "data" / "output.mp4"
+    _stream_to_file(response, path, is_text=False)
+    print(f"  -> Saved Video to {path.name}")
+
+
 
 def main() -> int:
     print("Starting templated scraper...")
