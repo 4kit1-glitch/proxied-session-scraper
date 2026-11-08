@@ -54,17 +54,16 @@ def initiation() -> None:
                 f.write(f"{proxy}\n")
 
 
+
+
 def load_config() -> dict:
     with CONFIG_FILE.open("r", encoding="utf-8") as f:
         return json.load(f)
 
 
 def read_proxies() -> tuple:
-    try:
-        with PROXIES_FILE.open("r", encoding="utf-8") as f:
-            return tuple(line.strip() for line in f if line.strip())
-    except OSError:
-        return ()
+    with PROXIES_FILE.open("r", encoding="utf-8") as f:
+        return tuple(line.strip() for line in f if line.strip())
 
 
 def is_login_req(config: dict) -> bool:
