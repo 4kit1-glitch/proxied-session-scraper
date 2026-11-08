@@ -78,79 +78,64 @@ def setup_session(config: dict, proxies: tuple) -> requests.Session:
         
     return session
 
+def login(session: requests.Session, config: dict) -> bool:
+    login_url = config.get("login_url")
+    if not login_url:
+        print("Error: 'login_url' missing from config.")
+        return False
 
-def login_and_scrape(
-    login_url: str, 
-    target_url: str, 
-    username: str, 
-    password: str, 
-    headers: dict, 
-    proxy_dict: dict | None,
-    verify_method: str,
-    verify_text: str,
-    verify_url: str
-) -> requests.Response | None:
-    
-    allow_redirects = (verify_method != "redirect")
-    
-    with requests.Session() as session:
-        session.headers.update(headers)
+    verify_method = config.get("login_verify_method", "text")
+    is_redirect_allowed = (verify_method != "redirect")
+
+    try:
+        login_page = session.get(login_url, timeout=10)
+        login_page.raise_for_status()
         
-        print(f"Fetching login page (Proxy: {proxy_dict['http'] if proxy_dict else 'Direct'})...")
-        try:
-            login_page = session.get(login_url, proxies=proxy_dict, timeout=10)
-            login_page.raise_for_status()
-        except requests.RequestException as e:
-            print(f"Failed to load login page: {e}")
-            return None
-
         soup = BeautifulSoup(login_page.text, "html.parser")
         token_input = soup.find("input", {"name": "csrf_token"})
         csrf_token = token_input["value"] if token_input else ""
 
         payload = {
-            "username": username,
-            "password": password,
+            "username": config.get("username"),
+            "password": config.get("password"),
             "csrf_token": csrf_token
         }
         
-        print("Attempting login...")
-        try:
-            login_res = session.post(
-                login_url, 
-                data=payload, 
-                proxies=proxy_dict, 
-                timeout=10, 
-                allow_redirects=allow_redirects
-            )
-            login_res.raise_for_status()
-            
-            if not _verify_login(login_res, verify_method, verify_text, verify_url):
-                print("Login failed (Verification condition not met).")
-                return None
+        login_res = session.post(
+            login_url, 
+            data=payload, 
+            timeout=10, 
+            allow_redirects=is_redirect_allowed
+        )
+        login_res.raise_for_status()
+        
+        if verify_method == "redirect":
+            if login_res.status_code in (301, 302, 303, 307, 308):
+                redirect_url = login_res.headers.get("Location", "").lower()
+                if not any(kw in redirect_url for kw in FAILURE_KEYWORDS):
+                    return True
+        elif verify_method == "url":
+            if config.get("login_success_url", "") in login_res.url:
+                return True
+        else:
+            if config.get("login_success_text", "") in login_res.text:
+                return True
                 
-            print("✅ Login successful!")
-            
-            print(f"Fetching protected target: {target_url}")
-            final_res = session.get(target_url, proxies=proxy_dict, timeout=10)
-            final_res.raise_for_status()
-            return final_res
-            
-        except requests.RequestException as e:
-            print(f"Network error during login/scrape: {e}")
-            return None
+        return False
+
+    except requests.RequestException as e:
+        print(f"  -> Login network error: {e}")
+        return False
 
 
-def direct_scrape(url: str, headers: dict, proxy_dict: dict | None) -> requests.Response | None:
-    print(f"Direct scraping {url} (Proxy: {proxy_dict['http'] if proxy_dict else 'Direct'})...")
+def scrape(session: requests.Session, url: str) -> requests.Response | None:
     try:
-        response = requests.get(url, headers=headers, proxies=proxy_dict, timeout=10)
+        response = session.get(url, timeout=10, stream=True)
         response.raise_for_status()
         return response
     except requests.RequestException as e:
-        print(f"Failed to fetch target: {e}")
+        print(f"  -> Scrape error: {e}")
         return None
-
 
 def save_response(response: requests.Response) -> None:
     content_type = response.headers.get("content-type", "").lower()
