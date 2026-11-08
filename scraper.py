@@ -137,26 +137,16 @@ def scrape(session: requests.Session, url: str) -> requests.Response | None:
         print(f"  -> Scrape error: {e}")
         return None
 
-def save_response(response: requests.Response) -> None:
-    content_type = response.headers.get("content-type", "").lower()
-    data_dir = BASE_PATH / "data"
+def _stream_to_file(response: requests.Response, path: Path, is_text: bool = False) -> None:
+    """Helper to stream response chunks to a file to save memory."""
+    mode = "w" if is_text else "wb"
+    encoding = "utf-8" if is_text else None
+    chunk_kwargs = {"decode_unicode": True} if is_text else {}
     
-    if "application/json" in content_type:
-        path = data_dir / "output.json"
-        path.write_text(response.text, encoding="utf-8")
-        print(f"Saved JSON to {path.name}")
-    elif "image" in content_type:
-        path = data_dir / "output.png"
-        path.write_bytes(response.content)
-        print(f"Saved Image to {path.name}")
-    elif "text/html" in content_type:
-        path = data_dir / "output.html"
-        path.write_text(response.text, encoding="utf-8")
-        print(f"Saved HTML to {path.name}")
-    else:
-        path = data_dir / "output.txt"
-        path.write_text(response.text, encoding="utf-8")
-        print(f"Saved Text to {path.name}")
+    with path.open(mode, encoding=encoding) as f:
+        for chunk in response.iter_content(chunk_size=8192, **chunk_kwargs):
+            if chunk:
+                f.write(chunk)
 
 
 def main() -> int:
