@@ -14,6 +14,17 @@ BASE_PATH = Path.cwd() / "sptemplate"
 REQ_DIRS = [BASE_PATH, BASE_PATH / "data", BASE_PATH / "proxies"]
 REQ_FILES = [BASE_PATH / "data" / "config.json", BASE_PATH / "proxies" / "proxies.txt"]
 
+DEFAULT_CONFIG = {
+    "target_url": "https://quotes.toscrape.com/login",
+    "login_url": "https://quotes.toscrape.com/login",
+    "username": "admin",
+    "password": "password123",
+    "headers": {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    }
+}
+
+
 
 def initiation() -> None:
     """
