@@ -1,6 +1,6 @@
 """
-some scraper template written at 1 am
-Assumes the web to scrape is not Js heavy
+Templated scraper script.
+Assumes the target website is not a JS-heavy Single Page Application.
 """
 
 import sys
@@ -22,7 +22,7 @@ DEFAULT_CONFIG = {
     "login_url": "https://quotes.toscrape.com/login",
     "username": "admin",
     "password": "password123",
-    "login_verify_method": "text", # Options: "text", "redirect", "url"
+    "login_verify_method": "text",
     "login_success_text": "Logout",
     "login_success_url": "", 
     "headers": {
@@ -32,13 +32,12 @@ DEFAULT_CONFIG = {
 
 DEFAULT_PROXIES = (
     "http://1.1.1.1:8080",
-    "http://2.2.2.2:8080",
-    "http://3.3.3.3:8080"
+    "http://2.2.2.2:8080"
 )
 
+FAILURE_KEYWORDS = ("login", "signin", "sign-in", "signup", "sign-up", "register", "auth")
 
 def initiation() -> None:
-    """Sets up dir structure and creates default files if missing."""
     for path in REQ_DIRS:
         path.mkdir(exist_ok=True, parents=True)
         
@@ -72,47 +71,39 @@ def is_login_req(config: dict) -> bool:
     return bool(config.get("username") and config.get("password"))
 
 
-def _get_proxy_dict(proxies: tuple) -> dict | None:
-    if not proxies:
-        return None
-    proxy = random.choice(proxies)
-    return {"http": proxy, "https": proxy}
-
-
-def _verify_login(response: requests.Response, config: dict) -> bool:
-    """Checks the configured method to confirm if login succeeded."""
-    method = config.get("login_verify_method", "text")
-    
+def _verify_login(response: requests.Response, method: str, text: str, url: str) -> bool:
+    """Checks the specific condition to confirm login succeeded."""
     if method == "redirect":
-        # Check if the server returned a 3xx redirect
         if response.status_code in (301, 302, 303, 307, 308):
             redirect_url = response.headers.get("Location", "")
             if "login" not in redirect_url.lower():
                 return True
     elif method == "url":
-        success_url = config.get("login_success_url", "")
-        if success_url and success_url in response.url:
+        if url and url in response.url:
             return True
     else: # Default to "text"
-        success_text = config.get("login_success_text", "")
-        if success_text and success_text in response.text:
+        if text and text in response.text:
             return True
             
     return False
 
 
-def login_and_scrape(config: dict, proxies: tuple) -> requests.Response | None:
-    target_url = config.get("target_url")
-    login_url = config.get("login_url")
-    headers = config.get("headers", {})
-    verify_method = config.get("login_verify_method", "text")
+def login_and_scrape(
+    login_url: str, 
+    target_url: str, 
+    username: str, 
+    password: str, 
+    headers: dict, 
+    proxy_dict: dict | None,
+    verify_method: str,
+    verify_text: str,
+    verify_url: str
+) -> requests.Response | None:
     
-    # If checking redirects, we must stop requests from auto-following them
     allow_redirects = (verify_method != "redirect")
     
     with requests.Session() as session:
         session.headers.update(headers)
-        proxy_dict = _get_proxy_dict(proxies)
         
         print(f"Fetching login page (Proxy: {proxy_dict['http'] if proxy_dict else 'Direct'})...")
         try:
@@ -127,8 +118,8 @@ def login_and_scrape(config: dict, proxies: tuple) -> requests.Response | None:
         csrf_token = token_input["value"] if token_input else ""
 
         payload = {
-            "username": config["username"],
-            "password": config["password"],
+            "username": username,
+            "password": password,
             "csrf_token": csrf_token
         }
         
@@ -143,7 +134,7 @@ def login_and_scrape(config: dict, proxies: tuple) -> requests.Response | None:
             )
             login_res.raise_for_status()
             
-            if not _verify_login(login_res, config):
+            if not _verify_login(login_res, verify_method, verify_text, verify_url):
                 print("Login failed (Verification condition not met).")
                 return None
                 
@@ -159,14 +150,10 @@ def login_and_scrape(config: dict, proxies: tuple) -> requests.Response | None:
             return None
 
 
-def direct_scrape(config: dict, proxies: tuple) -> requests.Response | None:
-    target_url = config.get("target_url")
-    headers = config.get("headers", {})
-    proxy_dict = _get_proxy_dict(proxies)
-    
-    print(f"Direct scraping {target_url} (Proxy: {proxy_dict['http'] if proxy_dict else 'Direct'})...")
+def direct_scrape(url: str, headers: dict, proxy_dict: dict | None) -> requests.Response | None:
+    print(f"Direct scraping {url} (Proxy: {proxy_dict['http'] if proxy_dict else 'Direct'})...")
     try:
-        response = requests.get(target_url, headers=headers, proxies=proxy_dict, timeout=10)
+        response = requests.get(url, headers=headers, proxies=proxy_dict, timeout=10)
         response.raise_for_status()
         return response
     except requests.RequestException as e:
@@ -207,11 +194,30 @@ def main() -> int:
         return 1
         
     proxies = read_proxies()
+    target_url = config.get("target_url")
+    headers = config.get("headers", {})
     
+    # 1. Main extracts and picks the proxy
+    proxy_dict = None
+    if proxies:
+        chosen_proxy = random.choice(proxies)
+        proxy_dict = {"http": chosen_proxy, "https": chosen_proxy}
+    
+    # 2. Main calls the function with the exact data it needs
     if is_login_req(config):
-        response = login_and_scrape(config, proxies)
+        response = login_and_scrape(
+            login_url=config.get("login_url"),
+            target_url=target_url,
+            username=config["username"],
+            password=config["password"],
+            headers=headers,
+            proxy_dict=proxy_dict,
+            verify_method=config.get("login_verify_method", "text"),
+            verify_text=config.get("login_success_text", ""),
+            verify_url=config.get("login_success_url", "")
+        )
     else:
-        response = direct_scrape(config, proxies)
+        response = direct_scrape(target_url, headers, proxy_dict)
         
     if response is None:
         print("Scrape failed. Exiting.")
