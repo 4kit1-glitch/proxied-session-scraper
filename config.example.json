@@ -1,0 +1,13 @@
+{
+    "target_url": "https://quotes.toscrape.com/",
+    "login_url": "https://quotes.toscrape.com/login",
+    "requires_login": true,
+    "username": "admin",
+    "password": "password123",
+    "login_verify_method": "text",
+    "login_success_text": "Logout",
+    "login_success_url": "",
+    "headers": {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    }
+}
