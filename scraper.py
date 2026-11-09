@@ -132,14 +132,11 @@ def login(session: requests.Session, config: dict) -> None:
         raise AuthError("Login verification failed. Check credentials.")
 
 
-def scrape(session: requests.Session, url: str) -> requests.Response | None:
-    try:
-        response = session.get(url, timeout=10, stream=True)
-        response.raise_for_status()
-        return response
-    except requests.RequestException as e:
-        print(f"  -> Scrape error: {e}")
-        return None
+def scrape(session: requests.Session, url: str) -> requests.Response:
+    response = session.get(url, timeout=10, stream=True)
+    response.raise_for_status()
+    return response
+
 
 def _stream_to_file(response: requests.Response, path: Path, is_text: bool = False) -> None:
     """Helper to stream response chunks to a file to save memory."""
