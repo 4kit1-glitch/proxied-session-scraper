@@ -141,12 +141,16 @@ def _stream_to_file(response: requests.Response, path: Path, is_text: bool = Fal
     """Helper to stream response chunks to a file to save memory."""
     mode = "w" if is_text else "wb"
     encoding = "utf-8" if is_text else None
-    chunk_kwargs = {"decode_unicode": True} if is_text else {}
     
     with path.open(mode, encoding=encoding) as f:
-        for chunk in response.iter_content(chunk_size=8192, **chunk_kwargs):
-            if chunk:
-                f.write(chunk)
+        if is_text:
+            for chunk in response.iter_content(chunk_size=8192, decode_unicode=True):
+                if chunk:
+                    f.write(chunk)
+        else:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
 
 def _save_text(response: requests.Response) -> None:
     path = BASE_PATH / "data" / "output.txt"
@@ -238,6 +242,8 @@ def main() -> int:
     except OSError as e:
         print(f"  -> File save error: {e}")
         return 1
+    except KeyboardInterrupt:
+        print("    Keyboard interupt")
         
     print("Finished successfully.")
     return 0
