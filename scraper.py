@@ -6,6 +6,7 @@ Assumes the target website is not a JS-heavy Single Page Application.
 import sys
 import json
 import random
+import time
 import requests
 from bs4 import BeautifulSoup
 from pathlib import Path
@@ -36,6 +37,11 @@ DEFAULT_PROXIES = (
 )
 
 FAILURE_KEYWORDS = ("login", "signin", "sign-in", "signup", "sign-up", "register", "auth")
+
+
+class AuthError(Exception):
+    """Raised when login fails due to bad credentials, not a network issue."""
+    pass
 
 def initiation() -> None:
     for path in REQ_DIRS:
