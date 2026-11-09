@@ -73,16 +73,15 @@ def read_proxies() -> tuple:
     with PROXIES_FILE.open("r", encoding="utf-8") as f:
         return tuple(line.strip() for line in f if line.strip())
 
-def setup_session(config: dict, proxies: tuple) -> requests.Session:
-    session = requests.Session()
-    session.headers.update(config.get("headers", {}))
+def setup_session(config: dict, proxy: str | None) -> requests.Session:
+    session = requests.Session()     # create the ses
+    session.headers.update(config.get("headers", {})) # update the seession headers
     
-    if proxies:
-        proxy = random.choice(proxies)
-        session.proxies.update({"http": proxy, "https": proxy})
+    if proxy:
+        session.proxies.update({"http": proxy, "https": proxy}) # update the session prox
         print(f"  -> Using proxy: {proxy}")
     else:
-        print("  -> No proxies found. Using direct connection.")
+        print("  -> No proxy given. Using direct connection.")
         
     return session
 
