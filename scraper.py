@@ -153,50 +153,22 @@ def _stream_to_file(response: requests.Response, path: Path, is_text: bool = Fal
             for chunk in response.iter_content(chunk_size=chk):
                 if chunk:
                     f.write(chunk)
-
-def _save_text(response: requests.Response) -> None:
-    path = BASE_PATH / "data" / "output.txt"
-    _stream_to_file(response, path, is_text=True)
-    print(f"  -> Saved Text to {path.name}")
-
-
-def _save_json(response: requests.Response) -> None:
-    path = BASE_PATH / "data" / "output.json"
-    _stream_to_file(response, path, is_text=True)
-    print(f"  -> Saved JSON to {path.name}")
-
-
-def _save_html(response: requests.Response) -> None:
-    path = BASE_PATH / "data" / "output.html"
-    _stream_to_file(response, path, is_text=True)
-    print(f"  -> Saved HTML to {path.name}")
-
-
-def _save_img(response: requests.Response) -> None:
-    path = BASE_PATH / "data" / "output.png"
-    _stream_to_file(response, path, is_text=False)
-    print(f"  -> Saved Image to {path.name}")
-
-
-def _save_vid(response: requests.Response) -> None:
-    path = BASE_PATH / "data" / "output.mp4"
-    _stream_to_file(response, path, is_text=False)
-    print(f"  -> Saved Video to {path.name}")
-
-
 def save_response(response: requests.Response) -> None:
     content_type = response.headers.get("content-type", "").lower()
     
     if "application/json" in content_type:
-        _save_json(response)
+        path, is_text = BASE_PATH / "data" / "output.json", True
     elif "image" in content_type:
-        _save_img(response)
+        path, is_text = BASE_PATH / "data" / "output.png", False
     elif "video" in content_type:
-        _save_vid(response)
+        path, is_text = BASE_PATH / "data" / "output.mp4", False
     elif "text/html" in content_type:
-        _save_html(response)
+        path, is_text = BASE_PATH / "data" / "output.html", True
     else:
-        _save_text(response)
+        path, is_text = BASE_PATH / "data" / "output.txt", True
+
+    _stream_to_file(response, path, is_text)
+    print(f"  -> Saved to {path.name}")
 
 def main() -> int:
     print("Starting templated scraper...")
