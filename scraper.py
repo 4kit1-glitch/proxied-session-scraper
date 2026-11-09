@@ -41,7 +41,7 @@ FAILURE_KEYWORDS = ("login", "signin", "sign-in", "signup", "sign-up", "register
 
 class AuthError(Exception):
     """Raised when login fails due to bad credentials, not a network issue."""
-    pass
+    
 
 def initiation() -> None:
     for path in REQ_DIRS:
