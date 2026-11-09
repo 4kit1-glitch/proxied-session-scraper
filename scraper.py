@@ -33,7 +33,9 @@ DEFAULT_CONFIG = {
 
 DEFAULT_PROXIES = (
     "http://1.1.1.1:8080",
-    "http://2.2.2.2:8080"
+    "http://2.2.2.2:8080",
+    "http://3.3.3.3:8080",
+    "http://4.4.4.4:8080"
 )
 
 FAILURE_KEYWORDS = ("login", "signin", "sign-in", "signup", "sign-up", "register", "auth")
