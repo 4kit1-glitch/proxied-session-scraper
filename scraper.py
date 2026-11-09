@@ -103,54 +103,33 @@ def _verify_login(response: requests.Response, config: dict) -> bool:
 
     return False
 
-def login(session: requests.Session, config: dict) -> bool:
+def login(session: requests.Session, config: dict) -> None:
     login_url = config.get("login_url")
     if not login_url:
-        print("Error: 'login_url' missing from config.")
-        return False
+        raise ValueError("Config error: 'requires_login' is True, but 'login_url' is missing.")
 
-    verify_method = config.get("login_verify_method", "text")
-    is_redirect_allowed = (verify_method != "redirect")
+    is_redirect_allowed = (config.get("login_verify_method") != "redirect")
 
-    try:
-        login_page = session.get(login_url, timeout=10)
-        login_page.raise_for_status()
-        
-        soup = BeautifulSoup(login_page.text, "html.parser")
-        token_input = soup.find("input", {"name": "csrf_token"})
-        csrf_token = token_input["value"] if token_input else ""
+    login_page = session.get(login_url, timeout=10)
+    login_page.raise_for_status()
+    
+    soup = BeautifulSoup(login_page.text, "html.parser")
+    token_input = soup.find("input", {"name": "csrf_token"})
+    csrf_token = token_input["value"] if token_input else ""
 
-        payload = {
-            "username": config.get("username"),
-            "password": config.get("password"),
-            "csrf_token": csrf_token
-        }
-        
-        login_res = session.post(
-            login_url, 
-            data=payload, 
-            timeout=10, 
-            allow_redirects=is_redirect_allowed
-        )
-        login_res.raise_for_status()
-        
-        if verify_method == "redirect":
-            if login_res.status_code in (301, 302, 303, 307, 308):
-                redirect_url = login_res.headers.get("Location", "").lower()
-                if not any(kw in redirect_url for kw in FAILURE_KEYWORDS):
-                    return True
-        elif verify_method == "url":
-            if config.get("login_success_url", "") in login_res.url:
-                return True
-        else:
-            if config.get("login_success_text", "") in login_res.text:
-                return True
-                
-        return False
-
-    except requests.RequestException as e:
-        print(f"  -> Login network error: {e}")
-        return False
+    payload = {
+        "username": config.get("username"),
+        "password": config.get("password"),
+        "csrf_token": csrf_token
+    }
+    
+    login_res = session.post(
+        login_url, data=payload, timeout=10, allow_redirects=is_redirect_allowed
+    )
+    login_res.raise_for_status()
+    
+    if not _verify_login(login_res, config):
+        raise AuthError("Login verification failed. Check credentials.")
 
 
 def scrape(session: requests.Session, url: str) -> requests.Response | None:
