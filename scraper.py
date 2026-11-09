@@ -142,14 +142,15 @@ def _stream_to_file(response: requests.Response, path: Path, is_text: bool = Fal
     """Helper to stream response chunks to a file to save memory."""
     mode = "w" if is_text else "wb"
     encoding = "utf-8" if is_text else None
+    chk = 8192 # chunck num
     
     with path.open(mode, encoding=encoding) as f:
         if is_text:
-            for chunk in response.iter_content(chunk_size=8192, decode_unicode=True):
+            for chunk in response.iter_content(chunk_size=chk, decode_unicode=True):
                 if chunk:
                     f.write(chunk)
         else:
-            for chunk in response.iter_content(chunk_size=8192):
+            for chunk in response.iter_content(chunk_size=chk):
                 if chunk:
                     f.write(chunk)
 
