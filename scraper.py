@@ -170,6 +170,56 @@ def save_response(response: requests.Response) -> None:
     _stream_to_file(response, path, is_text)
     print(f"  -> Saved to {path.name}")
 
+
+def execute_scrape(config: dict, proxies: tuple) -> int:
+    target_url = config.get("target_url")
+    if not target_url:
+        print("  -> Error: 'target_url' missing from config.")
+        return 1
+
+    proxy_list = proxies if proxies else (None,)
+    
+    for i, proxy in enumerate(proxy_list, 1):
+        print(f"\n[Attempt {i}/{len(proxy_list)}]")
+        time.sleep(random.randint(1, 3))
+        
+        session = setup_session(config, proxy)
+        
+        try:
+            if config.get("requires_login"):
+                print("  -> Authenticating...")
+                login(session, config)
+                print("  -> Login successful.")
+            
+            print(f"  -> Scraping target: {target_url}...")
+            response = scrape(session, target_url)
+            
+            print("  -> Saving response...")
+            save_response(response)
+            return 0
+            
+        except AuthError as e:
+            print(f"  -> Authentication Error: {e}")
+            return 1 # Stop immediately on bad credentials
+            
+        except ValueError as e:
+            print(f"  -> Config Error: {e}")
+            return 1
+            
+        except requests.exceptions.ProxyError:
+            print("  -> Proxy Error: Could not connect to proxy.")
+        except requests.exceptions.Timeout:
+            print("  -> Timeout Error: Request took too long.")
+        except requests.exceptions.RequestException as e:
+            print(f"  -> Network Error: {e}")
+        except OSError as e:
+            print(f"  -> File System Error: {e}")
+            return 1
+
+    print("\n  -> Max retries reached. All proxies failed.")
+    return 1
+
+
 def main() -> int:
     print("Starting templated scraper...")
     
