@@ -223,14 +223,14 @@ def execute_scrape(config: dict, proxies: tuple) -> int:
 def main() -> int:
     print("Starting templated scraper...")
     
-    print("[1/6] Initializing environment...")
+    print("[1/4] Initializing environment...")
     try:
         initiation()
     except OSError as e:
         print(f"  -> Failed to initialize files: {e}")
         return 1
         
-    print("[2/6] Loading configuration...")
+    print("[2/4] Loading configuration...")
     try:
         config = load_config()
         proxies = read_proxies()
@@ -238,40 +238,20 @@ def main() -> int:
         print(f"  -> Configuration error: {e}")
         return 1
         
-    print("[3/6] Setting up session...")
-    session = setup_session(config, proxies)
+    print("[3/4] Starting execution loop...")
+    exit_code = execute_scrape(config, proxies)
     
-    target_url = config.get("target_url")
-    if not target_url:
-        print("  -> Error: 'target_url' missing from config.")
-        return 1
-    
-    if config.get("username") and config.get("password"):
-        print("[4/6] Authenticating...")
-        if not login(session, config):
-            print("  -> Login failed. Exiting.")
-            return 1
-        print("  -> Login successful.")
+    if exit_code == 0:
+        print("\n[4/4] Finished successfully.")
     else:
-        print("[4/6] Skipping authentication (no credentials provided).")
-
-    print(f"[5/6] Scraping target: {target_url}...")
-    response = scrape(session, target_url)
-    if not response:
-        return 1
+        print("\n[4/4] Process failed.")
         
-    print("[6/6] Saving response...")
-    try:
-        save_response(response)
-    except OSError as e:
-        print(f"  -> File save error: {e}")
-        return 1
-    except KeyboardInterrupt:
-        print("    Keyboard interupt")
-        
-    print("Finished successfully.")
-    return 0
+    return exit_code
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        print("\n  -> Process interrupted by user. Exiting safely.")
+        sys.exit(130)
