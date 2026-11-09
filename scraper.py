@@ -85,6 +85,24 @@ def setup_session(config: dict, proxy: str | None) -> requests.Session:
         
     return session
 
+def _verify_login(response: requests.Response, config: dict) -> bool:
+    """Helper to evaluate the configurable login success conditions."""
+    verify_method = config.get("login_verify_method", "text")
+
+    if verify_method == "redirect":
+        if response.status_code in (301, 302, 303, 307, 308):
+            redirect_url = response.headers.get("Location", "").lower()
+            # Return True if no failure keywords are found in the redirect
+            return not any(kw in redirect_url for kw in FAILURE_KEYWORDS)
+            
+    elif verify_method == "url":
+        return config.get("login_success_url", "") in response.url
+        
+    else: # Default to "text"
+        return config.get("login_success_text", "") in response.text
+
+    return False
+
 def login(session: requests.Session, config: dict) -> bool:
     login_url = config.get("login_url")
     if not login_url:
