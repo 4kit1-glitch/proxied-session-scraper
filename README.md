@@ -4,7 +4,19 @@ A reusable Python template for fetching public pages or authenticated resources 
 
 ## Why I Built This
 
-This project is a reusable, fault-tolerant starting point for developers who want to plug in their own target URLs, login details, and success checks. It keeps common scraping plumbing such as session setup, configuration, proxy retries, and file output in one small script so that target-specific changes can stay focused.
+This project is a reusable, fault-tolerant starting point for developers who want to plug in their own target URLs, login details, and success checks. It keeps common scraping plumbing such as session setup, configuration, proxy retries, and file output in one small script so that target-specific changes can stay focused. And also i wanted to verify my scraping skills.
+
+
+## demos
+
+### test demo
+https://github.com/user-attachments/assets/fa9b8646-706c-4f8a-8ad4-00f4fe3500e3
+
+
+### real lab demo
+https://github.com/user-attachments/assets/b3566822-c47a-433e-8b82-dedcdfdcb0d6
+
+
 
 ## Directory Structure
 
