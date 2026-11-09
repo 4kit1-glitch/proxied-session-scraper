@@ -21,6 +21,7 @@ REQ_FILES = [CONFIG_FILE, PROXIES_FILE]
 DEFAULT_CONFIG = {
     "target_url": "https://quotes.toscrape.com/",
     "login_url": "https://quotes.toscrape.com/login",
+    "requires_login": True,
     "username": "admin",
     "password": "password123",
     "login_verify_method": "text",
@@ -30,7 +31,6 @@ DEFAULT_CONFIG = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     }
 }
-
 DEFAULT_PROXIES = (
     "http://1.1.1.1:8080",
     "http://2.2.2.2:8080",
